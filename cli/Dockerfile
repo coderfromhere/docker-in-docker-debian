@@ -28,10 +28,10 @@ ENV DOCKER_VERSION 23.0.6
 
 RUN set -eux; \
 	\
-	dpkgArch="$(dpkg --print-architecture)"; \
+	dpkgArch="$(uname -m)"; \
 	case "$dpkgArch" in \
-		'amd64') \
-			url="https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz"; \
+		'x86_64') \
+			url="https://download.docker.com/linux/static/stable/${dpkgArch}/docker-${DOCKER_VERSION}.tgz"; \
 			;; \
 		'armhf') \
 			url="https://download.docker.com/linux/static/stable/armel/docker-${DOCKER_VERSION}.tgz"; \
@@ -39,8 +39,8 @@ RUN set -eux; \
 		'armv7') \
 			url="https://download.docker.com/linux/static/stable/armhf/docker-${DOCKER_VERSION}.tgz"; \
 			;; \
-		'arm64') \
-			url="https://download.docker.com/linux/static/stable/aarch64/docker-${DOCKER_VERSION}.tgz"; \
+		'aarch64') \
+			url="https://download.docker.com/linux/static/stable/${dpkgArch}/docker-${DOCKER_VERSION}.tgz"; \
 			;; \
 		*) echo >&2 "error: unsupported 'docker.tgz' architecture ($dpkgArch)"; exit 1 ;; \
 	esac; \
@@ -107,10 +107,10 @@ RUN set -eux; \
 ENV DOCKER_COMPOSE_VERSION 2.18.1
 RUN set -eux; \
 	\
-	dpkgArch="$(dpkg --print-architecture)"; \
+	dpkgArch="$(uname -m)"; \
 	case "$dpkgArch" in \
-		'amd64') \
-			url="https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64"; \
+		'x86_64') \
+			url="https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-${dpkgArch}"; \
 			sha256='b4e6aff14c30f82ce26e94d37686b5598b3f870ce1e053927c853b4f4b128575'; \
 			;; \
 		'armhf') \
@@ -121,8 +121,8 @@ RUN set -eux; \
 			url="https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-${dpkgArch}"; \
 			sha256='cced34fc17c3689b5e0760b115ef481014eb004370a7b9380fc25eeef55570bb'; \
 			;; \
-		'arm64') \
-			url="https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-aarch64"; \
+		'aarch64') \
+			url="https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-${dpkgArch}"; \
 			sha256='6d1784542f74806ef0ed4e798d31c91604453eb06b86448b4c60d7df5d5b7afb'; \
 			;; \
 		'ppc64le') \
