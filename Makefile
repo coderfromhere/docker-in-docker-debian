@@ -26,4 +26,8 @@ build-cli:
 .PHONY: build-dind
 build-dind: TAG=$(PROJECT_NAME):$(PROJECT_VERSION)-dind
 build-dind: build-cli
-
+	docker build									\
+		--platform	linux/amd64						\
+		--tag      	$(TAG)							\
+		--file     	$(PROJECT_ROOT)/dind/Dockerfile	\
+		$(PROJECT_ROOT)/dind

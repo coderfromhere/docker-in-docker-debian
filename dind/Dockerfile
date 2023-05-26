@@ -7,80 +7,56 @@
 FROM docker-on-debian:23-cli
 
 # https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies
-RUN   set -eux;                         \
-      apt-get -q update                 \
- &&                                     \
-      apt-get install -qq               \
-          btrfs-progs                   \
-          e2fsprogs                     \
-          e2fsprogs-extra               \
-		  ip6tables                     \
-		  iptables                      \
-		  openssl                       \
-		  shadow-uidmap                 \
-		  xfsprogs                      \
-		  xz                            \
+RUN   set -eux;                                       \
+      apt-get -q update                               \
+ &&                                                   \
+      apt-get install -qq --no-install-recommends     \
+          btrfs-progs                                 \
+          e2fsprogs                                   \
+		  iptables                                    \
+		  openssl                                     \
+          procps                                      \
+          # in place of shadow (it's a source package in debian that expands into 3 binary packages)
+		  login passwd uidmap                         \
+		  xfsprogs                                    \
+		  lzma xz-utils                               \
           # pigz: https://github.com/moby/moby/pull/35697 (faster gzip implementation)
-          pigz                          \
- &&                                     \
-      rm -rf /var/lib/apt/lists/*       \
-      ;                                 \
-      # only install zfs if it's available for the current architecture
-      # https://git.alpinelinux.org/cgit/aports/tree/main/zfs/APKBUILD?h=3.6-stable#n9 ("all !armhf !ppc64le" as of 2017-11-01)
-      # "apk info XYZ" exits with a zero exit code but no output when the package exists but not for this arch
-      if zfs="$(apk info --no-cache --quiet zfs)" && [ -n "$zfs" ]; then \
-      		apk add --no-cache zfs; \
-      fi
+          pigz                                        \
+ &&                                                   \
+      rm -rf /var/lib/apt/lists/*
 
-
-# https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies
-RUN set -eux; \
-	apk add --no-cache \
-		btrfs-progs \
-		e2fsprogs \
-		e2fsprogs-extra \
-		ip6tables \
-		iptables \
-		openssl \
-		shadow-uidmap \
-		xfsprogs \
-		xz \
-# pigz: https://github.com/moby/moby/pull/35697 (faster gzip implementation)
-		pigz \
-	; \
-# only install zfs if it's available for the current architecture
-# https://git.alpinelinux.org/cgit/aports/tree/main/zfs/APKBUILD?h=3.6-stable#n9 ("all !armhf !ppc64le" as of 2017-11-01)
-# "apk info XYZ" exits with a zero exit code but no output when the package exists but not for this arch
-	if zfs="$(apk info --no-cache --quiet zfs)" && [ -n "$zfs" ]; then \
-		apk add --no-cache zfs; \
-	fi
+# We explicitly Disable ZFS because it's not recommended by default:
+# see https://docs.docker.com/storage/storagedriver/zfs-driver/
+#     > However, at this point in time it is not recommended to use the zfs Docker storage driver for production use
+#     > unless you have substantial experience with ZFS on Linux.
+ENV DOCKER_BUILDTAGS='exclude_graphdriver_zfs'
 
 # TODO aufs-tools
 
 # set up subuid/subgid so that "--userns-remap=default" works out-of-the-box
 RUN set -eux; \
-	addgroup -S dockremap; \
-	adduser -S -G dockremap dockremap; \
+	addgroup --system dockremap; \
+	adduser --system --ingroup dockremap dockremap; \
 	echo 'dockremap:165536:65536' >> /etc/subuid; \
 	echo 'dockremap:165536:65536' >> /etc/subgid
 
 RUN set -eux; \
 	\
-	apkArch="$(apk --print-arch)"; \
-	case "$apkArch" in \
+	dpkgArch="$(uname -m)"; \
+	case "$dpkgArch" in \
 		'x86_64') \
-			url='https://download.docker.com/linux/static/stable/x86_64/docker-23.0.6.tgz'; \
+			url="https://download.docker.com/linux/static/stable/${dpkgArch}/docker-${DOCKER_VERSION}.tgz"; \
 			;; \
 		'armhf') \
-			url='https://download.docker.com/linux/static/stable/armel/docker-23.0.6.tgz'; \
+			url="https://download.docker.com/linux/static/stable/armel/docker-${DOCKER_VERSION}.tgz"; \
 			;; \
 		'armv7') \
-			url='https://download.docker.com/linux/static/stable/armhf/docker-23.0.6.tgz'; \
+			url="https://download.docker.com/linux/static/stable/armhf/docker-${DOCKER_VERSION}.tgz"; \
 			;; \
 		'aarch64') \
-			url='https://download.docker.com/linux/static/stable/aarch64/docker-23.0.6.tgz'; \
+			url="https://download.docker.com/linux/static/stable/${dpkgArch}/docker-${DOCKER_VERSION}.tgz"; \
 			;; \
-		*) echo >&2 "error: unsupported 'docker.tgz' architecture ($apkArch)"; exit 1 ;; \
+		*) echo >&2 "error: unsupported 'docker.tgz' architecture ($dpkgArch)"; exit 1 ;; \
 	esac; \
 	\
 	wget -O 'docker.tgz' "$url"; \

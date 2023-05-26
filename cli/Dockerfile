@@ -8,14 +8,14 @@
 
 FROM debian:11.7-slim
 
-RUN   apt-get -q update                 \
- &&                                     \
-      apt-get install -qq               \
-          ca-certificates               \
-          wget                          \
+RUN   apt-get -q update                               \
+ &&                                                   \
+      apt-get install -qq --no-install-recommends     \
+          ca-certificates                             \
+          wget                                        \
           # DOCKER_HOST=ssh://... -- https://github.com/docker/cli/pull/1014
-          openssh-client                \
- &&                                     \
+          openssh-client                              \
+ &&                                                   \
       rm -rf /var/lib/apt/lists/*
 
 # ensure that nsswitch.conf is set up for Go's "netgo" implementation (which Docker explicitly uses)
